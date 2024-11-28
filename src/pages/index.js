@@ -1,115 +1,168 @@
-import Image from "next/image";
-import localFont from "next/font/local";
+import React, { useState, useEffect } from 'react';
+import { Line } from 'react-chartjs-2';
+import { 
+  Chart as ChartJS, 
+  CategoryScale, 
+  LinearScale, 
+  PointElement, 
+  LineElement, 
+  Title, 
+  Tooltip, 
+  Legend 
+} from 'chart.js';
+import { fetchForexData } from '../services/forexService';
+import { ChevronDownIcon } from 'lucide-react';
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
-});
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
-export default function Home() {
+const ForexChart = () => {
+  const [chartData, setChartData] = useState(null);
+  const [period, setPeriod] = useState('1M');
+  const [currencies, setCurrencies] = useState({
+    from: 'GBP',
+    to: 'INR'
+  });
+  const [isDarkMode, setIsDarkMode] = useState(true);
+
+  const periods = ['1W', '1M', '3M', '6M', '1Y'];
+  const currencyPairs = [
+    { from: 'GBP', to: 'INR' },
+    { from: 'AED', to: 'INR' },
+    { from: 'USD', to: 'EUR' },
+    { from: 'JPY', to: 'USD' }
+  ];
+
+  useEffect(() => {
+    const loadForexData = async () => {
+      try {
+        const data = await fetchForexData(currencies.from, currencies.to, period);
+        
+        setChartData({
+          labels: data.map(item => new Date(item.date).toLocaleDateString()),
+          datasets: [{
+            label: `${currencies.from}/${currencies.to} Exchange Rate`,
+            data: data.map(item => item.rate),
+            borderColor: isDarkMode ? 'rgb(96, 165, 250)' : 'rgb(37, 99, 235)',
+            backgroundColor: isDarkMode 
+              ? 'rgba(96, 165, 250, 0.2)' 
+              : 'rgba(37, 99, 235, 0.2)',
+            tension: 0.1,
+            fill: true
+          }]
+        });
+      } catch (error) {
+        console.error('Error loading forex data:', error);
+      }
+    };
+
+    loadForexData();
+  }, [currencies, period, isDarkMode]);
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      x: {
+        ticks: {
+          color: isDarkMode ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)'
+        },
+        grid: {
+          color: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
+        }
+      },
+      y: {
+        ticks: {
+          color: isDarkMode ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)'
+        },
+        grid: {
+          color: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
+        }
+      }
+    },
+    plugins: {
+      legend: { 
+        position: 'top',
+        labels: {
+          color: isDarkMode ? 'white' : 'black'
+        }
+      },
+      title: {
+        display: true,
+        text: `${currencies.from}/${currencies.to} Exchange Rate - ${period}`,
+        color: isDarkMode ? 'white' : 'black'
+      }
+    }
+  };
+
   return (
-    <div
-      className={`${geistSans.variable} ${geistMono.variable} grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]`}
-    >
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/pages/index.js
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className={`${isDarkMode ? 'dark bg-gray-900 text-white' : 'bg-white text-black'} min-h-screen p-6`}>
+      <div className="container mx-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">Forex Exchange Rates</h1>
+          <button 
+            onClick={() => setIsDarkMode(!isDarkMode)}
+            className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            {isDarkMode ? 'Light Mode' : 'Dark Mode'}
+          </button>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        <div className="grid md:grid-cols-2 gap-4 mb-6">
+          <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg shadow-md">
+            <label className="block text-sm font-medium mb-2">Currency Pair</label>
+            <div className="relative">
+              <select 
+                value={`${currencies.from}-${currencies.to}`}
+                onChange={(e) => {
+                  const [from, to] = e.target.value.split('-');
+                  setCurrencies({ from, to });
+                }}
+                className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {currencyPairs.map(pair => (
+                  <option 
+                    key={`${pair.from}-${pair.to}`} 
+                    value={`${pair.from}-${pair.to}`}
+                  >
+                    {pair.from}/{pair.to}
+                  </option>
+                ))}
+              </select>
+              <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            </div>
+          </div>
+
+          <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg shadow-md">
+            <label className="block text-sm font-medium mb-2">Time Period</label>
+            <div className="relative">
+              <select 
+                value={period} 
+                onChange={(e) => setPeriod(e.target.value)}
+                className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {periods.map(p => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </select>
+              <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden" style={{ height: '500px' }}>
+          {chartData && <Line data={chartData} options={chartOptions} />}
+        </div>
+      </div>
     </div>
   );
-}
+};
+
+export default ForexChart;
