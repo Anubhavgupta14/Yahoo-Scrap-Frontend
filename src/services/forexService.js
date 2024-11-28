@@ -4,7 +4,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export const fetchForexData = async (from, to, period) => {
   try {
-    const response = await axios.post(`${API_URL}/api/forex-data`, {
+    const response = await axios.post(`${API_URL}api/forex-data`, {
       from,
       to,
       period
