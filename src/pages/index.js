@@ -11,7 +11,6 @@ import {
   Legend,
 } from "chart.js";
 import { fetchForexData } from "../services/forexService";
-import { ChevronDownIcon } from "lucide-react";
 
 ChartJS.register(
   CategoryScale,
